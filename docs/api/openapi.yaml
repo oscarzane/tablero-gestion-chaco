@@ -19,9 +19,9 @@ tags:
   - name: Auth
     description: Autenticación y sesión
   - name: Usuarios
-    description: CRUD de usuarios
+    description: CRUD de usuarios (administrativo)
   - name: Áreas
-    description: CRUD de áreas
+    description: CRUD de áreas (administrativo)
   - name: Tableros
     description: CRUD de tableros (administrativo)
 
@@ -30,7 +30,7 @@ paths:
     post:
       tags: [Auth]
       summary: Login (obtiene token de autenticación)
-      security: []
+      security: [] # No requiere token
       requestBody:
         required: true
         content:
@@ -87,9 +87,6 @@ paths:
         - in: query
           name: per_page
           schema: { type: integer, minimum: 1, maximum: 100, default: 20 }
-        - in: query
-          name: eliminado
-          schema: { type: integer, enum: [0,1], default: 0 }
       responses:
         '200':
           description: Lista de usuarios
@@ -117,6 +114,21 @@ paths:
           content:
             application/json:
               schema: { $ref: '#/components/schemas/Usuario' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+  
+  /usuarios/recover:
+    post:
+      tags: [Usuarios]
+      summary: Recuperar contraseña (envía email con instrucciones)
+      security: [] # No requiere token
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/UsuarioRecover' }
+      responses:
+        '204':
+          description: Instrucciones enviadas (si el email existe)
         '401': { $ref: '#/components/responses/Unauthorized' }
 
   /usuarios/{id_usuario}:
@@ -163,10 +175,6 @@ paths:
     get:
       tags: [Áreas]
       summary: Listar áreas
-      parameters:
-        - in: query
-          name: eliminado
-          schema: { type: integer, enum: [0,1], default: 0 }
       responses:
         '200':
           description: Lista de áreas
@@ -243,9 +251,6 @@ paths:
         - in: query
           name: id_area
           schema: { type: integer }
-        - in: query
-          name: eliminado
-          schema: { type: integer, enum: [0,1], default: 0 }
       responses:
         '200':
           description: Lista de tableros
@@ -370,22 +375,24 @@ components:
       type: object
       properties:
         id_usuario: { type: integer }
-        id_area: { type: integer }
+        area:
+          type: object
+          properties:
+            id_area: { type: integer }
+            nombre: { type: string }
         cuil: { type: integer, nullable: true }
         email: { type: string }
         nombre_apellido: { type: string }
         nivel_usuario: { type: integer, nullable: true }
-        eliminado: { type: integer, enum: [0,1] }
     UsuarioCreate:
       type: object
-      required: [id_area, email, nombre_apellido, contrasenia]
+      required: [id_area, email, nombre_apellido]
       properties:
         id_area: { type: integer }
         cuil: { type: integer, nullable: true }
         email: { type: string, format: email }
         nombre_apellido: { type: string }
         nivel_usuario: { type: integer, nullable: true }
-        contrasenia: { type: string, minLength: 6 }
     UsuarioUpdate:
       type: object
       properties:
@@ -394,7 +401,11 @@ components:
         email: { type: string, format: email }
         nombre_apellido: { type: string }
         nivel_usuario: { type: integer, nullable: true }
-        contrasenia: { type: string, minLength: 6, description: "Si se envía, el backend re-hashea." }
+    UsuarioRecover:
+      type: object
+      required: [email]
+      properties:
+        email: { type: string, format: email }
     UsuarioLogin:
       type: object
       properties:
@@ -404,7 +415,15 @@ components:
     UsuarioMe:
       type: object
       properties:
-        nivel_usuario: { type: integer, nullable: true }
+        nombre_apellido: { type: string }
+        email: { type: string }
+        cuil: { type: integer}
+        nivel_usuario: { type: integer}
+        area: 
+          type: object
+          properties:
+            id_area: { type: integer }
+            nombre: { type: string }
         tableros: 
           type: array
           items:
@@ -418,17 +437,25 @@ components:
       type: object
       properties:
         id_area: { type: integer }
-        id_area_parent: { type: integer, nullable: true }
         nombre: { type: string }
-        jerarquia: { type: integer, nullable: true }
-        eliminado: { type: integer, enum: [0,1] }
+        jerarquia: { type: integer, enum: [1,2,3] }
+        subareas:
+          type: array
+          items: 
+            $ref: '#/components/schemas/Area'
+            nullable: true
     AreaUpsert:
       type: object
       required: [nombre]
       properties:
-        id_area_parent: { type: integer, nullable: true }
+        id_area: { type: integer, nullable: true }
         nombre: { type: string }
-        jerarquia: { type: integer, nullable: true }
+        jerarquia: { type: integer, enum: [1,2,3] }
+        subareas:
+          type: array
+          items: 
+            $ref: '#/components/schemas/AreaUpsert'
+            nullable: true
 
     # Tableros
     Tablero:
@@ -436,16 +463,13 @@ components:
       properties:
         id_tablero: { type: integer }
         id_area: { type: integer }
-        iframe_url: { type: string, nullable: true, description: "Legacy (opcional)" }
         iframe_url_desktop: { type: string, nullable: true }
         iframe_url_mobile: { type: string, nullable: true }
-        eliminado: { type: integer, enum: [0,1] }
     TableroUpsert:
       type: object
       required: [id_area]
       properties:
         id_area: { type: integer }
-        iframe_url: { type: string, nullable: true }
         iframe_url_desktop: { type: string, nullable: true }
         iframe_url_mobile: { type: string, nullable: true }
 
