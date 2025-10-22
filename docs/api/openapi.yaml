@@ -1,0 +1,453 @@
+openapi: 3.0.3
+info:
+  title: Sistema de tableros de control API
+  version: 1.1.0
+  description: |
+    API para la gestión de **Usuarios**, **Áreas** y **Tableros**.
+    - **Autenticación**: Token *opaco* tipo Bearer en TODOS los endpoints (incluido `/auth/logout`).
+    - **Autorización**: El backend debe validar permisos por nivel de usuario/área según políticas internas.
+    - **Borrado lógico**: Recursos con campo `eliminado` (0/1).
+    - **Buenas prácticas**: respuestas JSON consistentes, paginación en listados.
+
+servers:
+  - url: http://localhost:8000/api/v1
+    description: Desarrollo local
+  - url: https://gestion.chaco.gob.ar/api/v1
+    description: Producción
+
+tags:
+  - name: Auth
+    description: Autenticación y sesión
+  - name: Usuarios
+    description: CRUD de usuarios
+  - name: Áreas
+    description: CRUD de áreas
+  - name: Tableros
+    description: CRUD de tableros (administrativo)
+
+paths:
+  /auth/login:
+    post:
+      tags: [Auth]
+      summary: Login (obtiene token de autenticación)
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email, contrasenia]
+              properties:
+                email: { type: string, format: email }
+                contrasenia: { type: string }
+      responses:
+        '200':
+          description: Autenticado
+          headers:
+            X-Auth-Token:
+              description: Token de autenticación (Bearer)
+              schema: { type: string }
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UsuarioLogin'
+        '401': { $ref: '#/components/responses/Unauthorized' }
+
+  /auth/me:
+    get:
+      tags: [Auth]
+      summary: Información del usuario Autenticado
+      responses:
+        '200':
+          description: Usuario autenticado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UsuarioMe'
+        '401': { $ref: '#/components/responses/Unauthorized' }
+
+  /auth/logout:
+    post:
+      tags: [Auth]
+      summary: Logout (invalida el token actual)
+      responses:
+        '204':
+          description: Sesión cerrada
+        '401': { $ref: '#/components/responses/Unauthorized' }
+
+  /usuarios:
+    get:
+      tags: [Usuarios]
+      summary: Listar usuarios (paginado)
+      parameters:
+        - in: query
+          name: page
+          schema: { type: integer, minimum: 1, default: 1 }
+        - in: query
+          name: per_page
+          schema: { type: integer, minimum: 1, maximum: 100, default: 20 }
+        - in: query
+          name: eliminado
+          schema: { type: integer, enum: [0,1], default: 0 }
+      responses:
+        '200':
+          description: Lista de usuarios
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items: { $ref: '#/components/schemas/Usuario' }
+                  meta: { $ref: '#/components/schemas/PaginationMeta' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+    post:
+      tags: [Usuarios]
+      summary: Crear usuario
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/UsuarioCreate' }
+      responses:
+        '201':
+          description: Creado
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Usuario' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+
+  /usuarios/{id_usuario}:
+    get:
+      tags: [Usuarios]
+      summary: Obtener usuario por ID
+      parameters: [ { $ref: '#/components/parameters/IdUsuario' } ]
+      responses:
+        '200':
+          description: Usuario
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Usuario' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+    put:
+      tags: [Usuarios]
+      summary: Actualizar usuario
+      parameters: [ { $ref: '#/components/parameters/IdUsuario' } ]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/UsuarioUpdate' }
+      responses:
+        '200':
+          description: Actualizado
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Usuario' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+    delete:
+      tags: [Usuarios]
+      summary: Borrado lógico de usuario
+      parameters: [ { $ref: '#/components/parameters/IdUsuario' } ]
+      responses:
+        '204':
+          description: Eliminado (lógico)
+        '404': { $ref: '#/components/responses/NotFound' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+
+  /areas:
+    get:
+      tags: [Áreas]
+      summary: Listar áreas
+      parameters:
+        - in: query
+          name: eliminado
+          schema: { type: integer, enum: [0,1], default: 0 }
+      responses:
+        '200':
+          description: Lista de áreas
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items: { $ref: '#/components/schemas/Area' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+    post:
+      tags: [Áreas]
+      summary: Crear área
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/AreaUpsert' }
+      responses:
+        '201':
+          description: Creada
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Area' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+
+  /areas/{id_area}:
+    get:
+      tags: [Áreas]
+      summary: Obtener un área
+      parameters: [ { $ref: '#/components/parameters/IdArea' } ]
+      responses:
+        '200':
+          description: Área
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Area' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+    put:
+      tags: [Áreas]
+      summary: Actualizar área
+      parameters: [ { $ref: '#/components/parameters/IdArea' } ]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/AreaUpsert' }
+      responses:
+        '200':
+          description: Actualizada
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Area' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+    delete:
+      tags: [Áreas]
+      summary: Borrado lógico de área
+      parameters: [ { $ref: '#/components/parameters/IdArea' } ]
+      responses:
+        '204':
+          description: Eliminada (lógico)
+        '404': { $ref: '#/components/responses/NotFound' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+
+  /tableros:
+    get:
+      tags: [Tableros]
+      summary: Listar tableros (administrativo)
+      parameters:
+        - in: query
+          name: id_area
+          schema: { type: integer }
+        - in: query
+          name: eliminado
+          schema: { type: integer, enum: [0,1], default: 0 }
+      responses:
+        '200':
+          description: Lista de tableros
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items: { $ref: '#/components/schemas/Tablero' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+    post:
+      tags: [Tableros]
+      summary: Crear tablero
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/TableroUpsert' }
+      responses:
+        '201':
+          description: Creado
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Tablero' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+
+  /tableros/{id_tablero}:
+    get:
+      tags: [Tableros]
+      summary: Obtener tablero por ID
+      parameters: [ { $ref: '#/components/parameters/IdTablero' } ]
+      responses:
+        '200':
+          description: Tablero
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Tablero' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+    put:
+      tags: [Tableros]
+      summary: Actualizar tablero
+      parameters: [ { $ref: '#/components/parameters/IdTablero' } ]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/TableroUpsert' }
+      responses:
+        '200':
+          description: Actualizado
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Tablero' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+    delete:
+      tags: [Tableros]
+      summary: Borrado lógico de tablero
+      parameters: [ { $ref: '#/components/parameters/IdTablero' } ]
+      responses:
+        '204':
+          description: Eliminado (lógico)
+        '404': { $ref: '#/components/responses/NotFound' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: opaque
+  parameters:
+    IdUsuario:
+      name: id_usuario
+      in: path
+      required: true
+      schema: { type: integer }
+    IdArea:
+      name: id_area
+      in: path
+      required: true
+      schema: { type: integer }
+    IdTablero:
+      name: id_tablero
+      in: path
+      required: true
+      schema: { type: integer }
+  responses:
+    Unauthorized:
+      description: No autorizado
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/Error' }
+    NotFound:
+      description: No encontrado
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/Error' }
+  schemas:
+    Error:
+      type: object
+      properties:
+        error:
+          type: object
+          properties:
+            code: { type: string }
+            message: { type: string }
+      example: { error: { code: "UNAUTHORIZED", message: "Token inválido o vencido" } }
+
+    PaginationMeta:
+      type: object
+      properties:
+        page: { type: integer }
+        per_page: { type: integer }
+        total: { type: integer }
+
+    # Usuarios
+    Usuario:
+      type: object
+      properties:
+        id_usuario: { type: integer }
+        id_area: { type: integer }
+        cuil: { type: integer, nullable: true }
+        email: { type: string }
+        nombre_apellido: { type: string }
+        nivel_usuario: { type: integer, nullable: true }
+        eliminado: { type: integer, enum: [0,1] }
+    UsuarioCreate:
+      type: object
+      required: [id_area, email, nombre_apellido, contrasenia]
+      properties:
+        id_area: { type: integer }
+        cuil: { type: integer, nullable: true }
+        email: { type: string, format: email }
+        nombre_apellido: { type: string }
+        nivel_usuario: { type: integer, nullable: true }
+        contrasenia: { type: string, minLength: 6 }
+    UsuarioUpdate:
+      type: object
+      properties:
+        id_area: { type: integer }
+        cuil: { type: integer, nullable: true }
+        email: { type: string, format: email }
+        nombre_apellido: { type: string }
+        nivel_usuario: { type: integer, nullable: true }
+        contrasenia: { type: string, minLength: 6, description: "Si se envía, el backend re-hashea." }
+    UsuarioLogin:
+      type: object
+      properties:
+        nombre_apellido: { type: string }
+        email: { type: string }
+        token: { type: string }
+    UsuarioMe:
+      type: object
+      properties:
+        nivel_usuario: { type: integer, nullable: true }
+        tableros: 
+          type: array
+          items:
+            type: object
+            properties:
+              id_tablero: { type: integer }
+
+
+    # Áreas
+    Area:
+      type: object
+      properties:
+        id_area: { type: integer }
+        id_area_parent: { type: integer, nullable: true }
+        nombre: { type: string }
+        jerarquia: { type: integer, nullable: true }
+        eliminado: { type: integer, enum: [0,1] }
+    AreaUpsert:
+      type: object
+      required: [nombre]
+      properties:
+        id_area_parent: { type: integer, nullable: true }
+        nombre: { type: string }
+        jerarquia: { type: integer, nullable: true }
+
+    # Tableros
+    Tablero:
+      type: object
+      properties:
+        id_tablero: { type: integer }
+        id_area: { type: integer }
+        iframe_url: { type: string, nullable: true, description: "Legacy (opcional)" }
+        iframe_url_desktop: { type: string, nullable: true }
+        iframe_url_mobile: { type: string, nullable: true }
+        eliminado: { type: integer, enum: [0,1] }
+    TableroUpsert:
+      type: object
+      required: [id_area]
+      properties:
+        id_area: { type: integer }
+        iframe_url: { type: string, nullable: true }
+        iframe_url_desktop: { type: string, nullable: true }
+        iframe_url_mobile: { type: string, nullable: true }
+
+security:
+  - bearerAuth: []

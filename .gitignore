@@ -1,0 +1,15 @@
+# Laravel & Node
+/vendor
+/node_modules
+.env
+.env.*
+/storage/*.key
+npm-debug.log
+yarn-debug.log*
+yarn-error.log*
+/public/hot
+/public/storage
+/public/mix-manifest.json
+.idea
+.vscode
+.DS_Store
