@@ -78,4 +78,8 @@ phpunit.xml
 # === MISC ===
 *.sqlite
 *.sql
+<<<<<<< HEAD
 *.bak
+=======
+*.bak
+>>>>>>> 3f27d62427c95d9d0a694f69bdd4a097be1b3982
