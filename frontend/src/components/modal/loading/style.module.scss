@@ -1,0 +1,22 @@
+$espaciado: 32px;
+
+.dialog{
+    text-align: center;
+
+    .dialogContent{
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+    
+        img{
+            width: 100%;
+            max-width: 560px;
+            margin-bottom: 20px;
+        }
+    }
+
+    .dialogTitle{
+        padding-top: 0;
+    }
+}

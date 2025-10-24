@@ -1,0 +1,32 @@
+$espaciado: 32px;
+
+.container{
+    min-height: 100%;
+    background-color: #00203a;
+    //background-image: url('../../../images/fondo_login.jpg');
+    background-position: center;
+    background-size: cover;
+    background-attachment: fixed;
+}
+.leftContainer{
+    padding: $espaciado;
+
+    & img{
+        width: 100%;
+        max-width: 720px;
+    }
+}
+.rightContainer{
+    padding: $espaciado;
+
+    & > *{
+        width: 100%;
+        max-width: 360px;
+    }
+    & h1{
+        text-align: center;
+    }
+}
+.inputContaier{
+    padding: $espaciado;
+}

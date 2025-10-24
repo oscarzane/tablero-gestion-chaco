@@ -1,0 +1,11 @@
+form.form{
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    & > *{
+        margin: 0 0 16px 0;
+    }
+}
+.a{
+    text-align: right;
+}

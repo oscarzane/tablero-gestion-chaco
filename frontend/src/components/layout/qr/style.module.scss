@@ -1,0 +1,35 @@
+$espaciado: 32px;
+
+.container{
+    min-height: 100%;
+    background-image: url('../../../images/fondo_light.png');
+    background-position: center;
+    background-size: cover;
+    background-attachment: fixed;
+}
+.rightContainer{
+    padding: $espaciado;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    flex-wrap: nowrap;
+
+    & h1{
+        text-align: center;
+    }
+    & img{
+        width: 100%;
+    }
+}
+.flexContainer{
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    flex-wrap: nowrap;
+}
+.inputContaier{
+    padding: $espaciado;
+    width: 100%;
+}
